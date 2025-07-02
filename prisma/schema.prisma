@@ -1,0 +1,88 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  sessions      Session[]
+  characters    Character[]
+  campaigns     Campaign[]
+  campaignMembers CampaignMember[]
+}
+
+model Character {
+  id            String   @id @default(cuid())
+  name          String
+  race          String
+  class         String
+  background    String?
+  level         Int      @default(1)
+  abilityScores Json     // Store as JSON for flexibility
+  proficiencies Json     // Store as JSON array
+  equipment     Json     // Store as JSON array
+  spells        Json     // Store as JSON array
+  features      Json     // Store as JSON array
+  description   String?  @db.Text
+  userId        String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campaignMembers CampaignMember[]
+}
+
+model Campaign {
+  id          String   @id @default(cuid())
+  name        String
+  description String?  @db.Text
+  isPrivate   Boolean  @default(false)
+  minLevel    Int      @default(1)
+  maxLevel    Int      @default(20)
+  maxPlayers  Int      @default(6)
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  creator User @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  members CampaignMember[]
+}
+
+model CampaignMember {
+  id         String   @id @default(cuid())
+  campaignId String
+  userId     String
+  characterId String?
+  joinedAt   DateTime @default(now())
+
+  campaign  Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  character Character? @relation(fields: [characterId], references: [id], onDelete: SetNull)
+
+  @@unique([campaignId, userId])
+  @@unique([characterId]) // Ensures a character can only be in one campaign
+}
