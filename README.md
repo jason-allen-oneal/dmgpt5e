@@ -1,15 +1,16 @@
-# DMGPT5e - D&D 5e Character Creation Assistant
+# DMGPT5e - D&D 5e AI Assistant
 
-A Next.js application that uses AI to guide users through D&D 5e character creation, with a comprehensive vector store of D&D rules and content for accurate, contextual responses.
+A Next.js application that uses AI to assist with all aspects of D&D 5e gameplay, from character creation to rule lookups, with a comprehensive vector store of D&D rules and content for accurate, contextual responses.
 
 ## 🎲 Features
 
-- **AI-Powered Character Creation**: Guided conversation with an LLM to create D&D 5e characters
-- **Comprehensive D&D Knowledge Base**: Vector store containing all D&D 5e rules, spells, classes, races, and more
-- **Real-time Chat Interface**: Interactive character creation with streaming responses
-- **User Authentication**: Secure login and character management
+- **AI-Powered D&D Assistant**: Get help with character creation, rule questions, spell lookups, and more
+- **Comprehensive D&D Knowledge Base**: Vector store containing all D&D 5e rules, spells, classes, races, monsters, and more
+- **Real-time Chat Interface**: Interactive conversations with streaming responses
+- **User Authentication**: Secure login and data management
 - **Campaign Management**: Create and join D&D campaigns
 - **Character Storage**: Save and manage multiple characters
+- **Rule Lookups**: Quick access to D&D 5e rules and mechanics
 
 ## 🏗️ Architecture
 
@@ -91,7 +92,7 @@ This creates embeddings for all D&D 5e content from both 2014 and 2024 data sour
 npm run dev
 ```
 
-Visit [http://localhost:3000](http://localhost:3000) to start creating characters!
+Visit [http://localhost:3000](http://localhost:3000) to start your D&D adventure!
 
 ## 📚 Vector Store
 
@@ -114,10 +115,17 @@ The application includes a comprehensive vector store of D&D 5e content:
 ### How It Works
 1. **Embedding Generation**: Uses Ollama to create vector embeddings for all D&D content
 2. **Similarity Search**: Finds relevant content using cosine similarity
-3. **Context Injection**: Provides relevant D&D information to the LLM during character creation
+3. **Context Injection**: Provides relevant D&D information to the LLM during conversations
 4. **Smart Updates**: 2024 data automatically overwrites 2014 data for updated content
 
 ## 🎯 Usage
+
+### General D&D Assistance
+- **Ask about rules**: "How does grappling work?"
+- **Spell lookups**: "Tell me about Fireball"
+- **Class information**: "What are the Fighter's features?"
+- **Monster stats**: "What are the stats for a dragon?"
+- **Equipment questions**: "What weapons can a wizard use?"
 
 ### Character Creation
 1. **Login** to your account
@@ -170,7 +178,7 @@ npm run build:vectors # Build the vector store
 ### Ollama Setup
 The application uses Ollama for both LLM responses and embeddings:
 
-1. **LLM Model**: `llama3.1:8b` for character creation conversations
+1. **LLM Model**: `llama3.1:8b` for D&D conversations
 2. **Embedding Model**: Uses the same model for generating embeddings
 3. **API Endpoints**: 
    - `/api/chat` for LLM responses
@@ -194,8 +202,8 @@ Update environment variables:
 OLLAMA_MODEL="your-preferred-model"
 ```
 
-### Modifying Character Creation Flow
-Edit the system prompt in `src/app/api/dnd/chat/route.ts` to change AI behavior.
+### Modifying AI Behavior
+Edit the system prompt in `src/app/api/dnd/chat/route.ts` to change how the AI responds to different types of questions.
 
 ## 🐛 Troubleshooting
 
