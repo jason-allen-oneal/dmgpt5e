@@ -5,7 +5,33 @@ import { useState } from "react"
 interface CampaignCreationModalProps {
   isOpen: boolean
   onClose: () => void
-  onCampaignCreated?: (campaign: any) => void
+  onCampaignCreated: (campaign: Campaign) => void
+}
+
+interface Campaign {
+  id: string
+  name: string
+  description?: string
+  isPrivate: boolean
+  minLevel: number
+  maxLevel: number
+  maxPlayers: number
+  createdAt: string
+  creator: {
+    name?: string
+    email: string
+  }
+  members: Array<{
+    user: {
+      name?: string
+      email: string
+    }
+    character?: {
+      name: string
+      level: number
+      class: string
+    }
+  }>
 }
 
 export default function CampaignCreationModal({ isOpen, onClose, onCampaignCreated }: CampaignCreationModalProps) {

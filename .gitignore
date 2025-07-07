@@ -40,4 +40,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-/src/generated/prisma
+# Model files (large, should be downloaded separately)
+data/model/*.gguf
+data/model/Modelfile*
+
+# Keep data directory structure but ignore large files
+!data/
+!data/model/

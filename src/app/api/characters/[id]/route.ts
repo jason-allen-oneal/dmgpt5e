@@ -5,9 +5,11 @@ import { prisma } from "@/lib/prisma"
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
+    
     // Check authentication
     const session = await getServerSession(authOptions)
     if (!session?.user?.email) {
@@ -25,7 +27,7 @@ export async function GET(
 
     // Get character
     const character = await prisma.character.findUnique({
-      where: { id: params.id }
+      where: { id }
     })
 
     if (!character) {
@@ -53,9 +55,11 @@ export async function GET(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
+    
     // Check authentication
     const session = await getServerSession(authOptions)
     if (!session?.user?.email) {
@@ -73,7 +77,7 @@ export async function DELETE(
 
     // Get character
     const character = await prisma.character.findUnique({
-      where: { id: params.id }
+      where: { id }
     })
 
     if (!character) {
@@ -87,7 +91,7 @@ export async function DELETE(
 
     // Check if character is in a campaign
     const campaignMember = await prisma.campaignMember.findUnique({
-      where: { characterId: params.id }
+      where: { characterId: id }
     })
 
     if (campaignMember) {
@@ -99,7 +103,7 @@ export async function DELETE(
 
     // Delete character
     await prisma.character.delete({
-      where: { id: params.id }
+      where: { id }
     })
 
     return NextResponse.json({

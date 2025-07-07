@@ -1,11 +1,10 @@
 # DMGPT5e - D&D 5e AI Assistant
 
-A Next.js application that uses AI to assist with all aspects of D&D 5e gameplay, from character creation to rule lookups, with a comprehensive vector store of D&D rules and content for accurate, contextual responses.
+A Next.js application that uses AI to assist with all aspects of D&D 5e gameplay, from character creation to rule lookups.
 
 ## 🎲 Features
 
 - **AI-Powered D&D Assistant**: Get help with character creation, rule questions, spell lookups, and more
-- **Comprehensive D&D Knowledge Base**: Vector store containing all D&D 5e rules, spells, classes, races, monsters, and more
 - **Real-time Chat Interface**: Interactive conversations with streaming responses
 - **User Authentication**: Secure login and data management
 - **Campaign Management**: Create and join D&D campaigns
@@ -17,8 +16,7 @@ A Next.js application that uses AI to assist with all aspects of D&D 5e gameplay
 - **Frontend**: Next.js 15 with React 19, TypeScript, Tailwind CSS
 - **Backend**: Next.js API routes with Prisma ORM
 - **Database**: PostgreSQL (via Prisma)
-- **AI**: Ollama for LLM and embeddings
-- **Vector Store**: In-memory vector store with cosine similarity search
+- **AI**: Ollama for LLM
 - **Authentication**: NextAuth.js
 
 ## 🚀 Quick Start
@@ -51,7 +49,7 @@ NEXTAUTH_URL="http://localhost:3000"
 
 # Ollama Configuration
 OLLAMA_BASE_URL="http://localhost:11434"
-OLLAMA_MODEL="llama3.1:8b"
+OLLAMA_MODEL="dmgpt5e"
 ```
 
 ### 3. Database Setup
@@ -67,26 +65,23 @@ npx prisma db push
 npx prisma studio
 ```
 
-### 4. Start Ollama
+### 4. Setup AI Model
 
 ```bash
+# Run the setup script (downloads model if needed and configures Ollama)
+./setup-ollama.sh
+
 # Start Ollama server
 ollama serve
-
-# Pull the model (in another terminal)
-ollama pull llama3.1:8b
 ```
 
-### 5. Build Vector Store
+### 5. Start Development Server
 
 ```bash
-# Build the comprehensive D&D knowledge base
-npm run build:vectors
+npm run dev
 ```
 
-This creates embeddings for all D&D 5e content from both 2014 and 2024 data sources.
-
-### 6. Start Development Server
+### 5. Start Development Server
 
 ```bash
 npm run dev
@@ -94,29 +89,23 @@ npm run dev
 
 Visit [http://localhost:3000](http://localhost:3000) to start your D&D adventure!
 
-## 📚 Vector Store
+---
 
-The application includes a comprehensive vector store of D&D 5e content:
+## 📋 **What the Setup Script Does**
 
-### Data Sources
-- **2014 Data**: Complete D&D 5e content (spells, monsters, classes, races, etc.)
-- **2024 Data**: Updated rules and new content (skills, conditions, etc.)
+The `setup-ollama.sh` script automatically:
 
-### Content Types
-- Spells (15,000+ entries)
-- Monsters
-- Classes and Subclasses
-- Races and Subraces
-- Backgrounds
-- Equipment and Magic Items
-- Skills, Conditions, Damage Types
-- Rules and Features
+1. **Downloads the AI model** (4.9GB) from Hugging Face if not present
+2. **Creates Ollama configuration** with memory optimization
+3. **Registers the model** with Ollama for API access
+4. **Validates the setup** and provides testing instructions
 
-### How It Works
-1. **Embedding Generation**: Uses Ollama to create vector embeddings for all D&D content
-2. **Similarity Search**: Finds relevant content using cosine similarity
-3. **Context Injection**: Provides relevant D&D information to the LLM during conversations
-4. **Smart Updates**: 2024 data automatically overwrites 2014 data for updated content
+**Model Details:**
+- **Source**: [DarkIdol-Llama-3.1-8B-Instruct-1.2-Uncensored-GGUF](https://huggingface.co/QuantFactory/DarkIdol-Llama-3.1-8B-Instruct-1.2-Uncensored-GGUF)
+- **Size**: ~4.9GB (Q4_K_M quantization)
+- **Memory Usage**: Optimized for systems with 8GB+ RAM
+
+
 
 ## 🎯 Usage
 
@@ -159,9 +148,8 @@ dmgpt5e/
 ```
 
 ### Key Files
-- `src/lib/simpleVectorStore.ts` - Vector store implementation
 - `src/lib/ollama.ts` - Ollama integration
-- `src/app/api/dnd/chat/route.ts` - AI chat endpoint
+- `src/app/api/characters/creation/route.ts` - AI chat endpoint
 - `src/components/CharacterCreationModal.tsx` - Character creation UI
 
 ### Available Scripts
@@ -170,31 +158,33 @@ npm run dev          # Start development server
 npm run build        # Build for production
 npm run start        # Start production server
 npm run lint         # Run ESLint
-npm run build:vectors # Build the vector store
 ```
 
 ## 🤖 AI Integration
 
 ### Ollama Setup
-The application uses Ollama for both LLM responses and embeddings:
+The application uses Ollama for LLM responses with a local model:
 
-1. **LLM Model**: `llama3.1:8b` for D&D conversations
-2. **Embedding Model**: Uses the same model for generating embeddings
+1. **Automatic Setup**: Run the setup script to download and configure everything:
+   ```bash
+   ./setup-ollama.sh
+   ```
+
+2. **LLM Model**: Uses the DarkIdol-Llama-3.1-8B-Instruct model via Ollama
 3. **API Endpoints**: 
-   - `/api/chat` for LLM responses
-   - `/api/embeddings` for vector generation
+   - `/api/characters/creation` for character creation assistance
 
-### Vector Store Integration
-- **Real-time Queries**: Each user message triggers a vector search
-- **Context Injection**: Relevant D&D content is included in LLM prompts
-- **Smart Grouping**: Results are organized by content type (spells, skills, etc.)
+### Model Configuration
+- **Model File**: `data/model/model.gguf` (~4.9GB, Q4_K_M quantization)
+- **Ollama Model Name**: `dmgpt5e` (memory-optimized configuration)
+- **API Endpoint**: `http://localhost:11434`
+- **Context Window**: 4096 tokens
+- **Memory Usage**: Optimized for 8GB+ systems
+- **Source**: [Hugging Face](https://huggingface.co/QuantFactory/DarkIdol-Llama-3.1-8B-Instruct-1.2-Uncensored-GGUF)
 
 ## 🛠️ Customization
 
-### Adding New Data Sources
-1. Add JSON files to `data/` directory
-2. Update `processDataItem()` in `simpleVectorStore.ts`
-3. Rebuild vector store: `npm run build:vectors`
+
 
 ### Changing AI Models
 Update environment variables:
@@ -203,7 +193,7 @@ OLLAMA_MODEL="your-preferred-model"
 ```
 
 ### Modifying AI Behavior
-Edit the system prompt in `src/app/api/dnd/chat/route.ts` to change how the AI responds to different types of questions.
+Edit the system prompt in `src/app/api/characters/creation/route.ts` to change how the AI responds to different types of questions.
 
 ## 🐛 Troubleshooting
 
@@ -211,20 +201,17 @@ Edit the system prompt in `src/app/api/dnd/chat/route.ts` to change how the AI r
 
 **Ollama Connection Error**
 ```bash
-# Ensure Ollama is running
-ollama serve
-
-# Check available models
-ollama list
+# Ensure Ollama is running: ollama serve
+# Check available models: ollama list
+# Verify model is created: ollama run dmgpt5e "test"
+# Re-run setup if needed: ./setup-ollama.sh
 ```
 
-**Vector Store Build Fails**
+**Model Download Issues**
 ```bash
-# Check data files exist
-ls data/2014/ data/2024/
-
-# Rebuild vector store
-npm run build:vectors
+# Check internet connection
+# Verify disk space (need ~5GB free)
+# Re-run setup: ./setup-ollama.sh
 ```
 
 **Database Connection Issues**

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 
 interface Character {
   id: string
@@ -39,12 +39,6 @@ export default function CharacterView({ isOpen, onClose, characterId }: Characte
   const [character, setCharacter] = useState<Character | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (isOpen && characterId) {
-      loadCharacter()
-    }
-  }, [isOpen, characterId])
 
   const loadCharacter = async () => {
     if (!characterId) return
@@ -152,7 +146,7 @@ export default function CharacterView({ isOpen, onClose, characterId }: Characte
                       </span>
                     </div>
                     {character.background && (
-                      <p className="text-gray-700 mt-4 text-lg font-medium italic">"{character.background}"</p>
+                      <p className="text-gray-700 mt-4 text-lg font-medium italic">&quot;{character.background}&quot;</p>
                     )}
                   </div>
                   <div className="text-right">

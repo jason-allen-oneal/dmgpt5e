@@ -6,23 +6,28 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "build:vectors": "tsx scripts/buildSimpleVectorStore.ts"
+    "lint": "next lint"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.10.0",
+    "@huggingface/hub": "^2.3.0",
     "@prisma/client": "^6.10.1",
+    "@types/pdf-parse": "^1.1.5",
     "autoprefixer": "^10.4.21",
     "bcryptjs": "^3.0.2",
     "daisyui": "^5.0.43",
     "next": "15.3.4",
     "next-auth": "^4.24.11",
     "node-fetch": "^3.3.2",
+    "node-ts": "^8.0.6",
     "openai": "^5.8.2",
+    "pdf-parse": "^1.1.1",
     "qdrant-client": "^0.0.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-markdown": "^10.1.0"
+    "react-markdown": "^10.1.0",
+    "zod": "^3.25.70",
+    "zod-to-json-schema": "^3.24.6"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

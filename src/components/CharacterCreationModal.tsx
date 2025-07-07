@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react"
 import ReactMarkdown from "react-markdown"
+import { CharacterCreationResponseSchema } from "@/lib/schemas/characterCreationResponse"
 
 interface StructuredResponse {
   message: string
@@ -153,7 +154,7 @@ export default function CharacterCreationModal({ isOpen, onClose, onCharacterCre
   const initializeCharacterCreation = async (sessionId: string) => {
     setIsGenerating(true)
     try {
-      const response = await fetch("/api/dnd/chat", {
+      const response = await fetch("/api/characters/creation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -162,92 +163,59 @@ export default function CharacterCreationModal({ isOpen, onClose, onCharacterCre
           context: "Character creation session"
         }),
       })
-      if (!response.body) throw new Error("No response body for streaming")
-      const reader = response.body.getReader()
-      const decoder = new TextDecoder()
-      let done = false
-      let fullText = ""
+      const raw = await response.text()
+      console.log("LM STUDIO RAW RESPONSE:", raw)
+      const data = JSON.parse(raw)
+      if (!data.success) {
+        setChatMessages([{
+          role: "assistant",
+          content: data.error || "Sorry, there was an error initializing character creation.",
+          timestamp: new Date()
+        }])
+        return
+      }
+      // Handle tool response
+      if (data.tool === "dice_roll") {
+        setChatMessages([{
+          role: "assistant",
+          content: `🎲 Rolled ${data.dice}: ${data.rolls.join(", ")}`,
+          timestamp: new Date()
+        }])
+        return
+      }
+      const structuredData = data.response
       let assistantMessage: ChatMessage = {
         role: "assistant",
-        content: "",
-        timestamp: new Date()
+        content: structuredData.message,
+        timestamp: new Date(),
+        structuredData
       }
       setChatMessages([assistantMessage])
-      let buffer = ""
-      while (!done) {
-        const { value, done: doneReading } = await reader.read()
-        done = doneReading
-        if (value) {
-          buffer += decoder.decode(value)
-          let lines = buffer.split("\n")
-          buffer = lines.pop() || ""
-          for (const line of lines) {
-            if (!line.trim()) continue
-            try {
-              const parsed = JSON.parse(line)
-              if (parsed.message && parsed.message.content) {
-                fullText += parsed.message.content
-                assistantMessage = {
-                  ...assistantMessage,
-                  content: fullText
-                }
-                setChatMessages(prev => {
-                  const updated = [...prev]
-                  updated[updated.length - 1] = assistantMessage
-                  return updated
-                })
-              }
-            } catch (e) {
-              // ignore parse errors
-            }
+      if (structuredData.character) {
+        setCharacterData(structuredData.character)
+        if (structuredData.character.isComplete) {
+          const characterToSave: Character = {
+            id: "",
+            name: structuredData.character.name || "",
+            race: structuredData.character.race || "",
+            class: structuredData.character.class || "",
+            background: structuredData.character.background ?? undefined,
+            level: structuredData.character.level,
+            abilityScores: structuredData.character.abilityScores,
+            hp: structuredData.character.hp,
+            ac: structuredData.character.ac,
+            initiative: structuredData.character.initiative,
+            proficiencies: structuredData.character.proficiencies,
+            equipment: structuredData.character.equipment,
+            spells: structuredData.character.spells,
+            features: structuredData.character.features,
+            createdAt: new Date().toISOString()
           }
+          setCompletedCharacter(characterToSave)
+          setShowCompletionDialog(true)
         }
       }
-      // Try to extract structured data (JSON) from the fullText at the end
-      let structuredData = undefined
-      const jsonMatch = fullText.match(/```json\s*(\{[\s\S]*?\})\s*```/)
-      if (jsonMatch) {
-        try {
-          const parsedData = JSON.parse(jsonMatch[1])
-          structuredData = parsedData.response || null
-        } catch (e) {}
-      }
-      if (structuredData) {
-        assistantMessage = {
-          ...assistantMessage,
-          structuredData
-        }
-        setChatMessages(prev => {
-          const updated = [...prev]
-          updated[updated.length - 1] = assistantMessage
-          return updated
-        })
-        if (structuredData.character) {
-          setCharacterData(structuredData.character)
-          if (structuredData.character.isComplete) {
-            const characterToSave: Character = {
-              id: "",
-              name: structuredData.character.name || "",
-              race: structuredData.character.race || "",
-              class: structuredData.character.class || "",
-              background: structuredData.character.background,
-              level: structuredData.character.level,
-              abilityScores: structuredData.character.abilityScores,
-              hp: structuredData.character.hp,
-              ac: structuredData.character.ac,
-              initiative: structuredData.character.initiative,
-              proficiencies: structuredData.character.proficiencies,
-              equipment: structuredData.character.equipment,
-              spells: structuredData.character.spells,
-              features: structuredData.character.features,
-              createdAt: new Date().toISOString()
-            }
-            setCompletedCharacter(characterToSave)
-            setShowCompletionDialog(true)
-          }
-        }
-      }
-    } catch (error) {
+    } catch (err) {
       setChatMessages([{
         role: "assistant",
         content: "Hello! I'm here to help you create a D&D 5e character. What kind of character would you like to create?",
@@ -281,7 +249,7 @@ export default function CharacterCreationModal({ isOpen, onClose, onCharacterCre
         role: msg.role,
         content: msg.content
       }))
-      const response = await fetch("/api/dnd/chat", {
+      const response = await fetch("/api/characters/creation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -291,91 +259,61 @@ export default function CharacterCreationModal({ isOpen, onClose, onCharacterCre
           context: "Character creation session"
         }),
       })
-      if (!response.body) throw new Error("No response body for streaming")
-      const reader = response.body.getReader()
-      const decoder = new TextDecoder()
-      let done = false
-      let fullText = ""
+      const raw = await response.text()
+      console.log("LM STUDIO RAW RESPONSE:", raw)
+      const data = JSON.parse(raw)
+      if (!data.success) {
+        const errorMessage: ChatMessage = {
+          role: "assistant",
+          content: data.error || "Sorry, there was an error processing your request. Please try again.",
+          timestamp: new Date()
+        }
+        setChatMessages(prev => [...prev, errorMessage])
+        return
+      }
+      // Handle tool response
+      if (data.tool === "dice_roll") {
+        const toolMessage: ChatMessage = {
+          role: "assistant",
+          content: `🎲 Rolled ${data.dice}: ${data.rolls.join(", ")}`,
+          timestamp: new Date()
+        }
+        setChatMessages(prev => [...prev, toolMessage])
+        return
+      }
+      const structuredData = data.response
       let assistantMessage: ChatMessage = {
         role: "assistant",
-        content: "",
-        timestamp: new Date()
+        content: structuredData.message,
+        timestamp: new Date(),
+        structuredData
       }
       setChatMessages(prev => [...prev, assistantMessage])
-      let buffer = ""
-      while (!done) {
-        const { value, done: doneReading } = await reader.read()
-        done = doneReading
-        if (value) {
-          buffer += decoder.decode(value)
-          let lines = buffer.split("\n")
-          buffer = lines.pop() || ""
-          for (const line of lines) {
-            if (!line.trim()) continue
-            try {
-              const parsed = JSON.parse(line)
-              if (parsed.message && parsed.message.content) {
-                fullText += parsed.message.content
-                assistantMessage = {
-                  ...assistantMessage,
-                  content: fullText
-                }
-                setChatMessages(prev => {
-                  const updated = [...prev]
-                  updated[updated.length - 1] = assistantMessage
-                  return updated
-                })
-              }
-            } catch (e) {
-              // ignore parse errors
-            }
+      if (structuredData.character) {
+        setCharacterData(structuredData.character)
+        if (structuredData.character.isComplete) {
+          const characterToSave: Character = {
+            id: "",
+            name: structuredData.character.name || "",
+            race: structuredData.character.race || "",
+            class: structuredData.character.class || "",
+            background: structuredData.character.background ?? undefined,
+            level: structuredData.character.level,
+            abilityScores: structuredData.character.abilityScores,
+            hp: structuredData.character.hp,
+            ac: structuredData.character.ac,
+            initiative: structuredData.character.initiative,
+            proficiencies: structuredData.character.proficiencies,
+            equipment: structuredData.character.equipment,
+            spells: structuredData.character.spells,
+            features: structuredData.character.features,
+            createdAt: new Date().toISOString()
           }
+          setCompletedCharacter(characterToSave)
+          setShowCompletionDialog(true)
         }
       }
-      let structuredData = undefined
-      const jsonMatch = fullText.match(/```json\s*(\{[\s\S]*?\})\s*```/)
-      if (jsonMatch) {
-        try {
-          const parsedData = JSON.parse(jsonMatch[1])
-          structuredData = parsedData.response || null
-        } catch (e) {}
-      }
-      if (structuredData) {
-        assistantMessage = {
-          ...assistantMessage,
-          structuredData
-        }
-        setChatMessages(prev => {
-          const updated = [...prev]
-          updated[updated.length - 1] = assistantMessage
-          return updated
-        })
-        if (structuredData.character) {
-          setCharacterData(structuredData.character)
-          if (structuredData.character.isComplete) {
-            const characterToSave: Character = {
-              id: "",
-              name: structuredData.character.name || "",
-              race: structuredData.character.race || "",
-              class: structuredData.character.class || "",
-              background: structuredData.character.background,
-              level: structuredData.character.level,
-              abilityScores: structuredData.character.abilityScores,
-              hp: structuredData.character.hp,
-              ac: structuredData.character.ac,
-              initiative: structuredData.character.initiative,
-              proficiencies: structuredData.character.proficiencies,
-              equipment: structuredData.character.equipment,
-              spells: structuredData.character.spells,
-              features: structuredData.character.features,
-              createdAt: new Date().toISOString()
-            }
-            setCompletedCharacter(characterToSave)
-            setShowCompletionDialog(true)
-          }
-        }
-      }
-    } catch (error) {
+    } catch (err) {
       const errorMessage: ChatMessage = {
         role: "assistant",
         content: "Sorry, there was an error processing your request. Please try again.",
@@ -393,17 +331,6 @@ export default function CharacterCreationModal({ isOpen, onClose, onCharacterCre
     setSessionId("")
     setCharacterData(null)
     onClose()
-  }
-
-  const getAbilityModifier = (score: number | null) => {
-    if (score === null) return "—"
-    const modifier = Math.floor((score - 10) / 2)
-    return modifier >= 0 ? `+${modifier}` : `${modifier}`
-  }
-
-  const getAbilityScoreDisplay = (score: number | null) => {
-    if (score === null) return "—"
-    return `${score} (${getAbilityModifier(score)})`
   }
 
   const getAbilityScoreDisplayWithModifier = (score: number | null) => {
@@ -587,7 +514,7 @@ export default function CharacterCreationModal({ isOpen, onClose, onCharacterCre
                       </span>
                     </div>
                     {completedCharacter.background && (
-                      <p className="text-gray-700 mt-4 text-lg font-medium italic">"{completedCharacter.background}"</p>
+                      <p className="text-gray-700 mt-4 text-lg font-medium italic">&ldquo;{completedCharacter.background}&rdquo;</p>
                     )}
                   </div>
                 </div>
@@ -795,8 +722,8 @@ export default function CharacterCreationModal({ isOpen, onClose, onCharacterCre
                   </svg>
                   <div>
                     <h4 className="text-lg font-semibold text-yellow-800 mb-2">Ready to Save?</h4>
-                    <p className="text-yellow-700">
-                      Once saved, your character will be available in your dashboard. You can always view, edit, or delete characters later.
+                    <p className="text-sm text-gray-600 mb-4">
+                      Your character &quot;{completedCharacter.name}&quot; has been created successfully! You can now join campaigns or create more characters.
                     </p>
                   </div>
                 </div>
